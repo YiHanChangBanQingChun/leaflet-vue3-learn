@@ -1,14 +1,14 @@
-<!-- filepath: /src/components/FunctionOne.vue -->
+<!-- filepath: /src/components/FunctionTwo.vue -->
 <template>
   <div id="app">
     <header id="header">
-      <h1 id="title">Leaflet入门-2：显示热力图</h1>
+      <h1 id="title">Leaflet入门-3：显示健康指数</h1>
     </header>
     <div id="map"></div>
     <div id="controls">
       <div class="layer-control">
         <div>
-        <h3>图层控制</h3>
+          <h3>图层控制</h3>
           <label>
             <input type="radio" value="gaode" v-model="selectedLayer" @change="switchBaseLayer" />
             高德地图
@@ -19,21 +19,17 @@
           </label>
         </div>
         <div>
-        <h3>边界显示</h3>
+          <h3>边界显示</h3>
           <label>
             <input type="checkbox" v-model="showProvinceBorder" @change="toggleProvinceBorder" />
             省份边界
           </label>
         </div>
         <div>
-        <h3>震点显示</h3>
+          <h3>健康指数显示</h3>
           <label>
-            <input type="checkbox" v-model="showPoints" @change="togglePoints" />
-            地震点
-          </label>
-          <label>
-            <input type="checkbox" v-model="showHeatmap" @change="toggleHeatmap" />
-            热力图
+            <input type="checkbox" v-model="showHealthIndex" @change="toggleHealthIndex" />
+            健康指数
           </label>
         </div>
       </div>
@@ -46,8 +42,6 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import 'leaflet-draw';
-import 'leaflet.heat';
-import Papa from 'papaparse';
 
 // 修复默认图标路径问题
 delete L.Icon.Default.prototype._getIconUrl;
@@ -59,21 +53,23 @@ L.Icon.Default.mergeOptions({
 });
 
 export default {
-  name: 'FunctionOne',
+  name: 'FunctionTwo',
   data() {
     return {
       map: null,
       currentLayer: null,
       provinceLayer: null,
-      pointsLayer: null,
-      heatLayer: null,
-      showHeatmap: false,
       showProvinceBorder: true,
-      showPoints: true,
+      showHealthIndex: true,
       selectedLayer: 'gaode',
       latitude: '23.03776',
       longitude: '113.3687',
-      heatmapData: []
+      healthList: {
+        '北京': 86.33, '上海': 81.84, '天津': 62.73, '海南': 51.43, '浙江': 49.42, '山东': 48.91,
+        '广东': 47.47, '江苏': 45, '重庆': 44.64, '福建': 40.39, '贵州': 38.4, '四川': 36.74, '安徽': 36.52, '广西': 34.95, '江西': 33.77,
+        '湖北': 31.56, '宁夏': 28.82, '湖南': 28.03, '辽宁': 27.7, '山西': 25.73, '内蒙古': 25.27, '陕西': 23.95, '西藏': 23.94, '甘肃': 22.56, '新疆': 21.99,
+        '青海': 21.69, '河北': 21.39, '吉林': 21.16, '黑龙江': 21.08, '河南': 20.49, '云南': 19.17
+      }
     };
   },
   mounted() {
@@ -95,79 +91,9 @@ export default {
       .then(response => response.json())
       .then(geojsonData => {
         this.provinceLayer = L.geoJSON(geojsonData, {
-          style: {
-            color: 'blue', // 边界颜色
-            weight: 2, // 边界宽度
-            opacity: 1, // 边界透明度
-            fillOpacity: 0 // 内部透明度
-          }
-        });
-        if (this.showProvinceBorder) {
-          this.provinceLayer.addTo(this.map);
-        }
-      });
-
-    // 加载并显示 CSV 数据
-    fetch('/data/20211129中国地震台网数据.csv')
-      .then(response => response.text())
-      .then(csvText => {
-        Papa.parse(csvText, {
-          header: true,
-          complete: (results) => {
-            this.pointsLayer = L.layerGroup();
-            results.data.forEach(row => {
-              const lat = parseFloat(row['纬度(°)']);
-              const lng = parseFloat(row['经度(°)']);
-              if (!isNaN(lat) && !isNaN(lng)) {
-                const marker = L.circleMarker([lat, lng], {
-                  radius: 5,
-                  fillColor: "#ff7800",
-                  color: "#000",
-                  weight: 1,
-                  opacity: 1,
-                  fillOpacity: 0.8
-                }).addTo(this.pointsLayer);
-
-                const popupContent = `
-                  <table>
-                    <tr><th>震级(M)</th><td>${row['震级(M)']}</td></tr>
-                    <tr><th>发震时刻(UTC+8)</th><td>${row['发震时刻(UTC+8)']}</td></tr>
-                    <tr><th>纬度(°)</th><td>${row['纬度(°)']}</td></tr>
-                    <tr><th>经度(°)</th><td>${row['经度(°)']}</td></tr>
-                    <tr><th>深度(千米)</th><td>${row['深度(千米)']}</td></tr>
-                    <tr><th>参考位置</th><td>${row['参考位置']}</td></tr>
-                  </table>
-                `;
-
-                marker.bindPopup(popupContent);
-
-                // 添加到热力图数据
-                this.heatmapData.push([lat, lng, 1]);
-              }
-            });
-
-            if (this.showPoints) {
-              this.pointsLayer.addTo(this.map);
-            }
-
-            // 初始化热力图图层
-            this.heatLayer = L.heatLayer(this.heatmapData, {
-            radius: 24,
-            maxOpacity: 1,
-            minOpacity: 0.5,
-            gradient: {
-                0.0: '#0000ff', // 深蓝色
-                0.25: '#00ffff', // 青色
-                0.5: '#00ff00', // 绿色
-                0.75: '#ffff00', // 黄色
-                1.0: '#ff0000' // 红色
-            }
-            });
-            if (this.showHeatmap) {
-                this.heatLayer.addTo(this.map);
-            }
-          }
-        });
+          style: this.styleFeature,
+          onEachFeature: this.onEachFeature
+        }).addTo(this.map);
       });
 
     // 添加测量工具
@@ -247,13 +173,6 @@ export default {
         }).addTo(this.map);
       }
     },
-    toggleHeatmap() {
-      if (this.showHeatmap) {
-        this.heatLayer.addTo(this.map);
-      } else {
-        this.map.removeLayer(this.heatLayer);
-      }
-    },
     toggleProvinceBorder() {
       if (this.showProvinceBorder) {
         this.provinceLayer.addTo(this.map);
@@ -261,12 +180,41 @@ export default {
         this.map.removeLayer(this.provinceLayer);
       }
     },
-    togglePoints() {
-      if (this.showPoints) {
-        this.pointsLayer.addTo(this.map);
+    toggleHealthIndex() {
+      if (this.showHealthIndex) {
+        this.provinceLayer.setStyle(this.styleFeature);
       } else {
-        this.map.removeLayer(this.pointsLayer);
+        this.provinceLayer.setStyle({ fillColor: 'transparent' });
       }
+    },
+    getColor(d) {
+      return d > 80 ? '#800026' :
+             d > 70 ? '#BD0026' :
+             d > 60 ? '#E31A1C' :
+             d > 50 ? '#FC4E2A' :
+             d > 40 ? '#FD8D3C' :
+             d > 30 ? '#FEB24C' :
+             d > 20 ? '#FED976' :
+                      '#FFEDA0';
+    },
+    styleFeature(feature) {
+      return {
+        fillColor: this.showHealthIndex ? this.getColor(this.healthList[feature.properties.name]) : 'transparent',
+        weight: 2,
+        opacity: 1,
+        color: 'black',
+        dashArray: '3',
+        fillOpacity: 0.7
+      };
+    },
+    onEachFeature(feature, layer) {
+      layer.on({
+        // eslint-disable-next-line no-unused-vars
+        click: (e) => {
+          const healthIndex = this.healthList[feature.properties.name];
+          layer.bindPopup(`${feature.properties.name} 健康指数: ${healthIndex}`).openPopup();
+        }
+      });
     }
   }
 }

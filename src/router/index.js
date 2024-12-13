@@ -10,7 +10,12 @@ const routes = [
     path: '/FunctionOne',
     name: 'FunctionOne',
     component: () => import('../components/FunctionOne.vue')
-  }
+  },
+  {
+    path: '/FunctionTwo',
+    name: 'FunctionTwo',
+    component: () => import('../components/FunctionTwo.vue')
+  },
   // 添加其他路由配置
 ];
 

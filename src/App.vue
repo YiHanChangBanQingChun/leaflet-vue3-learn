@@ -22,8 +22,8 @@ export default {
       selectedItem: '',
       menuItems: [
         { name: 'Leaflet入门-1：显示底图与矢量对象', route: '/HelloWorld' },
-        { name: '功能一', route: '/FunctionOne' },
-        { name: '功能二', route: '/feature2' },
+        { name: 'Leaflet入门-2：显示热力图', route: '/FunctionOne' },
+        { name: 'Leaflet入门-3：显示健康指数', route: '/FunctionTwo' },
         // 添加更多功能项
       ],
     };
@@ -41,8 +41,8 @@ export default {
 <style>
 .combobox {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  bottom: 10px;
+  right: 10px;
   z-index: 1000;
 }
 
